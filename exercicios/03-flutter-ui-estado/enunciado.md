@@ -69,5 +69,6 @@ Uma fonte só (`favoritesProvider`) refletindo no **card**, no **contador** e no
 ## Entrega
 - **Fork + Pull Request** no repo público; cole o link no Canvas. `flutter test` é o gate.
 - **Hands-on da aula não pontua** — a entrega solo (testes verdes) vale os 15 pts.
+- ✏️ **Edite os arquivos dentro de `exercicios/03-flutter-ui-estado/pratica/` (no lugar)** — **não crie subpasta** `aluno-.../`. O autograder roda `flutter test` nessa pasta.
 
 > **Bridging nativo entra na Aula 4** (KMP + Platform Channel) — aqui o foco é **UI + estado + testes**.
