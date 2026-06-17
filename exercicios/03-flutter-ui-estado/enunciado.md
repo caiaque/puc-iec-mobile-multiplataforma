@@ -25,7 +25,7 @@ flutter doctor                          # https://docs.flutter.dev/get-started/i
 cd exercicios/03-flutter-ui-estado/pratica
 flutter pub get
 flutter run -d chrome                   # o app já abre (lista de filmes), sem emulador/rede
-flutter test                            # os testes começam VERMELHOS — é o que você deixa verde
+flutter test                            # começa VERMELHO — deixe verde (checklist_test.dart confirma que terminou tudo)
 ```
 
 ---

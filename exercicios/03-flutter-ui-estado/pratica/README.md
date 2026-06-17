@@ -10,10 +10,12 @@ flutter run -d chrome   # abre no navegador — sem emulador, sem rede/token
 
 ## Testar (é o gate da Atividade 3)
 ```bash
-flutter test            # Ex1 (card) · Ex2 (favoritar/limpar) · Ex3 (seu teste)
+flutter test            # Ex1 (card) · Ex2 (favoritar/limpar) · Ex3 (seu teste) · checklist (auto-verificação)
 flutter analyze         # precisa ficar limpo
 ```
 Comece com os testes **vermelhos**; deixe-os **verdes**.
+
+> `test/checklist_test.dart` é sua **auto-verificação** (não edite): tudo verde = você terminou.
 
 ## O que completar (🧑‍🏫 aula · 🧑‍💻 casa)
 | TASK | Arquivo | O quê | |
