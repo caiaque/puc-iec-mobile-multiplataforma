@@ -17,8 +17,14 @@ export const tmdbClient = axios.create({
 });
 
 // Simulador de offline — usado pelo NetworkToggle (só em dev)
-let _simulateOffline = false;
-export const setSimulateOffline = (v: boolean) => { _simulateOffline = v; };
+// Persiste em sessionStorage pra sobreviver ao reload
+const OFFLINE_KEY = 'dev:simulate-offline';
+let _simulateOffline = sessionStorage.getItem(OFFLINE_KEY) === 'true';
+
+export const setSimulateOffline = (v: boolean) => {
+  _simulateOffline = v;
+  sessionStorage.setItem(OFFLINE_KEY, String(v));
+};
 export const isSimulatingOffline = () => _simulateOffline;
 
 tmdbClient.interceptors.request.use((config) => {

@@ -1,15 +1,19 @@
 // src/components/NetworkToggle.tsx — dev tool pra simular offline
 
 import { useState } from 'react';
-import { setSimulateOffline } from '../services/tmdb';
+import { setSimulateOffline, isSimulatingOffline } from '../services/tmdb';
 
 export function NetworkToggle() {
-  const [offline, setOffline] = useState(false);
+  const [offline, setOffline] = useState(isSimulatingOffline);
 
   const toggle = () => {
     const next = !offline;
     setSimulateOffline(next);
     setOffline(next);
+    // Reload em ambos os casos:
+    // → offline: reload mostra cache (fetch falha → IndexedDB)
+    // → online:  reload dispara fetch fresco
+    window.location.reload();
   };
 
   return (
