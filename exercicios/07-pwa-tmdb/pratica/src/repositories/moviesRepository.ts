@@ -14,45 +14,57 @@ import type { Movie } from '../types/movie';
 
 export type CacheStrategy = 'NetworkFirst' | 'CacheFirst' | 'StaleWhileRevalidate';
 
-// ── TODO 3c ────────────────────────────────────────────────────────────────
-// Implemente as três estratégias abaixo.
-// Cada uma recebe `page` e retorna `Movie[]`.
+// ── Estratégias de cache ────────────────────────────────────────────────────
+// Mesmas estratégias do slide "Cache strategies" (Aula 4),
+// mas aqui no IndexedDB em vez do CacheStorage do Service Worker.
 //
-// NetworkFirst:
-//   1. Tenta fetchPopularMovies(page)
-//   2. Se OK → saveMovies(page, results) → retorna results
-//   3. Se falhar → loadMovies(page) → retorna cache (ou lança se vazio)
-//
-// CacheFirst:
-//   1. Tenta loadMovies(page)
-//   2. Se existe → retorna cache (e atualiza em background via fetchPopularMovies)
-//   3. Se vazio → fetchPopularMovies(page) → saveMovies → retorna
-//
-// StaleWhileRevalidate:
-//   1. Lê cache (pode ser undefined)
-//   2. Dispara fetch em background (não await)
-//      → quando resolve: saveMovies + notifica via onRevalidate?
-//   3. Retorna cache se existir, senão aguarda o fetch
-//
-// Referência: slides Aula 4 — "Cache strategies" (mesma lógica, IndexedDB em vez de CacheStorage)
+// Os TODOs estão em services/db.ts (saveMovies / loadMovies).
+// Quando implementados, o offline passa a funcionar automaticamente.
 // ───────────────────────────────────────────────────────────────────────────
 
+// Tenta rede; se falhar, serve cache. Ideal pra dados dinâmicos.
 async function networkFirst(page: number): Promise<Movie[]> {
-  // TODO 3c — NetworkFirst
-  return [];
+  try {
+    const { results } = await fetchPopularMovies(page);
+    await saveMovies(page, results); // TODO 3a — sem implementação, é no-op
+    return results;
+  } catch (err) {
+    const cached = await loadMovies(page); // TODO 3b — sem implementação, retorna undefined
+    if (cached) return cached;
+    throw err;
+  }
 }
 
+// Serve cache imediatamente; busca rede só se não tiver cache.
 async function cacheFirst(page: number): Promise<Movie[]> {
-  // TODO 3c — CacheFirst
-  return [];
+  const cached = await loadMovies(page);
+  if (cached) {
+    // Atualiza em background sem bloquear
+    fetchPopularMovies(page)
+      .then(({ results }) => saveMovies(page, results))
+      .catch(() => {});
+    return cached;
+  }
+  const { results } = await fetchPopularMovies(page);
+  await saveMovies(page, results);
+  return results;
 }
 
+// Serve cache imediatamente (rápido) + busca rede em paralelo.
+// Quando rede responde, notifica via onRevalidate pra UI atualizar.
 async function staleWhileRevalidate(
   page: number,
   onRevalidate?: (movies: Movie[]) => void,
 ): Promise<Movie[]> {
-  // TODO 3c — StaleWhileRevalidate
-  return [];
+  const cached = await loadMovies(page);
+
+  const networkPromise = fetchPopularMovies(page).then(({ results }) => {
+    saveMovies(page, results).catch(() => {});
+    onRevalidate?.(results);
+    return results;
+  });
+
+  return cached ?? networkPromise;
 }
 
 export const moviesRepository = {
