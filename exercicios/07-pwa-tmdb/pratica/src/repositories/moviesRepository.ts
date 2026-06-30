@@ -31,7 +31,9 @@ async function networkFirst(page: number): Promise<Movie[]> {
   } catch (err) {
     const cached = await loadMovies(page); // TODO 3b — sem implementação, retorna undefined
     if (cached) return cached;
-    throw err;
+    const offlineErr = err instanceof Error ? err : new Error(String(err));
+    (offlineErr as Error & { offline: boolean }).offline = true;
+    throw offlineErr;
   }
 }
 

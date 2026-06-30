@@ -9,6 +9,7 @@ import { MovieCard } from '../components/MovieCard';
 import { MovieCardSkeleton } from '../components/MovieCardSkeleton';
 import { NetworkToggle } from '../components/NetworkToggle';
 import { ErrorScreen } from './ErrorScreen';
+import { OfflineScreen } from './OfflineScreen';
 import { TokenMissingScreen } from './TokenMissingScreen';
 import { styles } from './HomeScreen.styles';
 
@@ -21,7 +22,9 @@ export function HomeScreen() {
   useInfiniteScroll(sentinelRef, loadMore);
 
   if (isTokenMissing) return <TokenMissingScreen />;
-  if (error) return <ErrorScreen error={error} />;
+  if (error) return (error as Error & { offline?: boolean }).offline
+    ? <OfflineScreen />
+    : <ErrorScreen error={error} />;
 
   const visible = search.trim()
     ? movies.filter((m) => m.title.toLowerCase().includes(search.toLowerCase()))
