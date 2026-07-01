@@ -64,7 +64,7 @@ ls src/services
 npm install
 
 # 4. Configure o token TMDB
-cp .env.example .env.local
+cp .env.example .env.local        # Windows cmd: copy .env.example .env.local
 # Edite .env.local e coloque seu token em VITE_TMDB_TOKEN
 # Gere em: https://www.themoviedb.org/settings/api (Read Access Token)
 
