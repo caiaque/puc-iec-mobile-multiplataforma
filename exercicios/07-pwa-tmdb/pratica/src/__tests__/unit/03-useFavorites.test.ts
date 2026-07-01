@@ -1,9 +1,10 @@
-// src/__tests__/useFavorites.test.ts
+// src/__tests__/unit/03-useFavorites.test.ts
 // ✅ AVALIATIVO — implemente os casos marcados com TODO
+// Os casos 1 e 2 já estão prontos como exemplo. Implemente 3, 4 e 5.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useFavorites } from '../hooks/useFavorites';
+import { useFavorites } from '../../hooks/useFavorites';
 
 beforeEach(() => {
   localStorage.clear();

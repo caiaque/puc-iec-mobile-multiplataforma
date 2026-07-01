@@ -1,0 +1,202 @@
+name: Grade — Atividade 7 (PWA TMDB)
+
+# pull_request_target: dispara em PRs de forks e tem permissão de comentar.
+# SEGURANÇA: dois checkouts — base/main para o test harness CONFIÁVEL;
+#            head.sha em _pr/ para a entrega do aluno (só LEMOS, nunca executamos).
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'exercicios/07-pwa-tmdb/pratica/**'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # 1️⃣ Checkout base/main — CONFIÁVEL: test harness do prof
+      - name: Checkout base (grader + test harness)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # 2️⃣ Checkout da entrega do aluno em _pr/ — NÃO-CONFIÁVEL (só lemos)
+      - name: Checkout entrega do aluno (isolada em _pr/)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: _pr
+
+      # 3️⃣ Discover: encontra qual arquivo o aluno mudou
+      - id: discover
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const path = require('node:path');
+            const EX = 'exercicios/07-pwa-tmdb/pratica';
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number, per_page: 100,
+            });
+            const changed = files.map(f => f.filename)
+              .filter(f => f.startsWith(EX + '/') && !f.includes('/node_modules/'));
+            const login = (context.payload.pull_request.user.login || '').toLowerCase();
+            const skip = changed.length === 0;
+            core.setOutput('skip', String(skip));
+            core.setOutput('login', login);
+            core.setOutput('pr', String(context.payload.pull_request.number));
+            core.info(`changed=${changed.length} login=${login}`);
+
+      # 4️⃣ Copiar APENAS os arquivos de implementação do aluno para o harness
+      #    (tmdb.ts = código avaliado; 03-useFavorites.test.ts = testes escritos pelo aluno)
+      - name: Injetar implementação do aluno no harness confiável
+        if: steps.discover.outputs.skip != 'true'
+        run: |
+          PRATICA="exercicios/07-pwa-tmdb/pratica"
+          PR_PRATICA="_pr/${PRATICA}"
+
+          # tmdb.ts — implementação do TODO 1 (obrigatório)
+          if [ -f "${PR_PRATICA}/src/services/tmdb.ts" ]; then
+            cp "${PR_PRATICA}/src/services/tmdb.ts" "${PRATICA}/src/services/tmdb.ts"
+            echo "✓ tmdb.ts injetado"
+          fi
+
+          # 03-useFavorites.test.ts — testes escritos pelo aluno (TODO 2)
+          if [ -f "${PR_PRATICA}/src/__tests__/unit/03-useFavorites.test.ts" ]; then
+            cp "${PR_PRATICA}/src/__tests__/unit/03-useFavorites.test.ts" \
+               "${PRATICA}/src/__tests__/unit/03-useFavorites.test.ts"
+            echo "✓ 03-useFavorites.test.ts injetado"
+          fi
+
+      # 5️⃣ Instalar deps do harness CONFIÁVEL (nunca do _pr/)
+      - name: Instalar deps (harness confiável)
+        if: steps.discover.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: exercicios/07-pwa-tmdb/pratica/package-lock.json
+
+      - name: npm ci no harness
+        if: steps.discover.outputs.skip != 'true'
+        working-directory: exercicios/07-pwa-tmdb/pratica
+        run: npm ci
+
+      # 6️⃣ Rodar Vitest com saída JSON
+      - name: Rodar Vitest (--reporter=json)
+        if: steps.discover.outputs.skip != 'true'
+        working-directory: exercicios/07-pwa-tmdb/pratica
+        env:
+          VITE_TMDB_TOKEN: placeholder
+        run: |
+          npm test -- --reporter=json --outputFile=/tmp/vitest-results.json || true
+
+      # 7️⃣ Grader: instalar deps e rodar o validator
+      - name: Instalar deps do grader
+        if: steps.discover.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: npm ci no grader
+        if: steps.discover.outputs.skip != 'true'
+        working-directory: ./grader
+        run: npm ci || npm install
+
+      - name: Rodar validator A7
+        if: steps.discover.outputs.skip != 'true'
+        working-directory: ./grader
+        run: |
+          npx tsx lib/validators/pwa-tmdb.ts \
+            --results "/tmp/vitest-results.json" \
+            --output /tmp/grade.json \
+            --student-login "${{ steps.discover.outputs.login }}" \
+            --commit-sha "${{ github.event.pull_request.head.sha }}" || true
+
+      # 8️⃣ Upload grade.json como artifact (privado — tem privateBreakdown)
+      - name: Upload grade.json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grade-a7-${{ steps.discover.outputs.login }}
+          path: /tmp/grade.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      # 9️⃣ Comentar no PR (nota mínima + breakdown)
+      - name: Comentar no PR
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const pr = Number('${{ steps.discover.outputs.pr }}');
+            const skip = '${{ steps.discover.outputs.skip }}' === 'true';
+            const head = [
+              `## 🤖 J.A.R.V.I.S. — *autograder do Prof. Jackson*`,
+              ``,
+              `> *Just A Rather Very Intelligent System* — bot que executa as regras de avaliação nos PRs.`,
+              ``,
+              `**Atividade 7 — PWA TMDB (offline-first com IndexedDB)**`,
+              ``,
+            ].join('\n');
+
+            if (skip) {
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number: pr,
+                body: head + `ℹ️ Nenhum arquivo de \`exercicios/07-pwa-tmdb/pratica/\` foi alterado neste PR.`,
+              });
+              return;
+            }
+
+            if (!fs.existsSync('/tmp/grade.json')) {
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number: pr,
+                body: head +
+                  `❌ A suíte não executou (erro de install/config). ` +
+                  `Rode \`npm install && npm test\` localmente dentro de \`exercicios/07-pwa-tmdb/pratica/\` ` +
+                  `e confirme que o ambiente está ok antes de fazer commit.`,
+              });
+              return;
+            }
+
+            const g = JSON.parse(fs.readFileSync('/tmp/grade.json', 'utf8'));
+            const fmt = n => String(Number(n).toFixed(1)).replace('.', ',');
+            const body = [
+              head,
+              `### ${g.pass ? '✅' : '⚠️'} Nota MÍNIMA automática: **${fmt(g.score)} / ${g.total}**`,
+              `É um **piso** — testes automatizados que passaram de verdade.`,
+              `A nota final é lançada **no Canvas** e parte daqui (**só sobe**).`,
+              ``,
+              `#### Detalhes`,
+              g.publicBreakdown,
+              ``,
+              g.pass
+                ? `✅ Mínimo atingido (${fmt(g.score)}/${g.total}). ` +
+                  `Algum ❌? Faça um commit e o bot reavalia.`
+                : `⚠️ Abaixo do mínimo — veja os ❌ acima, rode \`npm test\` local e faça commit.`,
+              ``,
+              `**Como testar offline (demo em aula):**`,
+              `\`npm run dev\` → carregue filmes → clique 📵 Offline → reload → filmes aparecem do cache.`,
+              ``,
+              `_Dúvidas? **Teams da turma** ou jackson.96@gmail.com._`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number: pr, body,
+            });
+
+      # 🔟 Status check: passa se nota ≥ mínimo
+      - name: Status check (passa se score ≥ mínimo)
+        if: always()
+        run: |
+          if [ '${{ steps.discover.outputs.skip }}' = 'true' ]; then exit 0; fi
+          if [ ! -f /tmp/grade.json ]; then exit 1; fi
+          PASS=$(node -e "const g=require('/tmp/grade.json'); process.exit(g.pass ? 0 : 1)" 2>&1; echo $?)
+          exit $PASS

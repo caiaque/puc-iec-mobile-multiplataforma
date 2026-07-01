@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['tests/**', 'node_modules/**'],
   },
   plugins: [
     react(),
@@ -28,22 +30,25 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Pré-cache dos assets estáticos (shell da PWA)
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // ── TODO 3 ────────────────────────────────────────────────────────
-        // Adicione uma runtimeCaching strategy para a TMDB API:
-        //
-        // runtimeCaching: [
-        //   {
-        //     urlPattern: /^https:\/\/api\.themoviedb\.org\//,
-        //     handler: 'NetworkFirst',
-        //     options: {
-        //       cacheName: 'tmdb-api',
-        //       expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
-        //     },
-        //   },
-        // ],
-        // ─────────────────────────────────────────────────────────────────
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.themoviedb\.org\//,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'tmdb-api',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/image\.themoviedb\.org\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'tmdb-images',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+        ],
       },
     }),
   ],

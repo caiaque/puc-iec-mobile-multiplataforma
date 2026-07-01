@@ -1,11 +1,11 @@
-// src/__tests__/MovieCard.test.tsx
+// src/__tests__/unit/01-MovieCard.test.tsx
 // 📘 MODELO — leia antes de escrever os outros testes
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MovieCard } from '../components/MovieCard';
-import type { Movie } from '../types/movie';
+import { MovieCard } from '../../components/MovieCard';
+import type { Movie } from '../../types/movie';
 
 const movie: Movie = {
   id: 1,

@@ -8,7 +8,7 @@ import { AppHeader } from '../components/AppHeader';
 import { MovieCard } from '../components/MovieCard';
 import { MovieCardSkeleton } from '../components/MovieCardSkeleton';
 import { NetworkToggle } from '../components/NetworkToggle';
-import { OfflineScreen } from './OfflineScreen';
+import { EmptyMoviesScreen } from './EmptyMoviesScreen';
 import { ErrorScreen } from './ErrorScreen';
 import { TokenMissingScreen } from './TokenMissingScreen';
 import { styles } from './HomeScreen.styles';
@@ -45,7 +45,7 @@ export function HomeScreen() {
       />
 
       <section>
-        {isEmpty && <OfflineScreen />}
+        {isEmpty && <EmptyMoviesScreen />}
         {visible.length === 0 && search && !isEmpty && (
           <p style={{ color: '#90a4ae', textAlign: 'center', padding: 24 }}>
             Nenhum resultado para "{search}"

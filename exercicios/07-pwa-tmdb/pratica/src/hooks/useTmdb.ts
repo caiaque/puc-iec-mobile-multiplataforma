@@ -17,12 +17,6 @@ export function usePopularMovies() {
   useEffect(() => {
     let cancelled = false;
 
-    // ── TODO 2 ─────────────────────────────────────────────────────────────
-    // Use useEffect para chamar fetchPopularMovies(page) ao montar e a cada
-    // vez que `page` mudar. Gerencie loading e error adequadamente.
-    // Acumule os filmes: page 1 substitui, page > 1 concatena.
-    // Use hasMore = page < total_pages pra saber se tem mais.
-    // ───────────────────────────────────────────────────────────────────────
     const load = async () => {
       try {
         setLoading(true);

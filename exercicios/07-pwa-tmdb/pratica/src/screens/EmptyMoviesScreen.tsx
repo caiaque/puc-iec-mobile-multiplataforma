@@ -1,6 +1,6 @@
-// src/screens/OfflineScreen.tsx
+// src/screens/EmptyMoviesScreen.tsx
 
-export function OfflineScreen() {
+export function EmptyMoviesScreen() {
   return (
     <div style={styles.center}>
       <p style={styles.icon}>🎬</p>
