@@ -178,8 +178,8 @@ O bot comenta o score automático a cada commit.
 | Critério | Pts |
 |---|---|
 | `fetchPopularMovies` chama `tmdbClient.get('/movie/popular')` com `language: 'pt-BR'` | 8 |
-| `fetchPopularMovies` retorna `MoviesResponse` completo (inclui `results`, `total_pages`) | 4 |
-| `useFavorites` testes 3, 4, 5 implementados com asserções reais | 3 |
+| `fetchPopularMovies` propaga erro quando `tmdbClient` lança (ex.: token inv&aacute;lido) | 4 |
+| `useFavorites` testes 3, 4, 5 implementados com asser&ccedil;&otilde;es reais _(revis&atilde;o manual)_ | 3 |
 | **Total** | **15** |
 
 ---

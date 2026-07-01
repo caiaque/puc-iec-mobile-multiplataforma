@@ -53,7 +53,8 @@ function readJsonSafe(path: string): any | null {
   }
 }
 
-/** Status de um teste específico pelo nome do arquivo + substring do título. */
+/** Status de um teste específico pelo nome do arquivo + substring do título.
+ *  Vitest usa 'todo' (não 'skipped') para it.todo(). Normalizamos pra 'skipped'. */
 function testStatus(
   results: any,
   fileKey: string,
@@ -67,7 +68,9 @@ function testStatus(
     String(a.fullName ?? a.title ?? '').toLowerCase().includes(titleSubstring.toLowerCase()),
   );
   if (!test) return 'not-found';
-  return test.status as 'passed' | 'failed' | 'skipped';
+  const s = String(test.status);
+  if (s === 'todo' || s === 'skipped' || s === 'pending') return 'skipped';
+  return s as 'passed' | 'failed';
 }
 
 async function main() {
@@ -113,12 +116,15 @@ async function main() {
   });
 
   // 3a) useFavorites teste 3 — toggle duas vezes remove
+  // manual=true: aluno escreve o próprio teste — trivialmente gameable (expect(true).toBe(true)).
+  // Bot mostra no breakdown como informativo; nota manual confirmada no Canvas.
   const f3 = testStatus(results, '03-useFavorites', 'toggle duas vezes');
   criteria.push({
     id: 'fav-toggle-remove',
     description: 'useFavorites: toggle duas vezes remove o favorito (teste 3)',
     weight: 1,
     earned: ran && f3 === 'passed' ? 1 : 0,
+    manual: true,
     publicNote:
       !ran
         ? 'suíte não executou'
@@ -139,6 +145,7 @@ async function main() {
     description: 'useFavorites: persiste favoritos no localStorage (teste 4)',
     weight: 1,
     earned: ran && f4 === 'passed' ? 1 : 0,
+    manual: true,
     publicNote:
       !ran
         ? 'suíte não executou'
@@ -159,6 +166,7 @@ async function main() {
     description: 'useFavorites: chama navigator.setAppBadge (teste 5)',
     weight: 1,
     earned: ran && f5 === 'passed' ? 1 : 0,
+    manual: true,
     publicNote:
       !ran
         ? 'suíte não executou'
@@ -174,7 +182,7 @@ async function main() {
 
   const total = criteria.reduce((acc, c) => acc + c.weight, 0);
   const { autoScore, autoTotal, manualTotal } = computeAuto(criteria);
-  const minimo = passThreshold(total, 60);
+  const minimo = passThreshold(autoTotal, 60); // 60% dos pontos auto-verificáveis (12 pts)
   const { publicBreakdown, privateBreakdown } = buildBreakdowns(criteria);
 
   const result: GradeResult = {
